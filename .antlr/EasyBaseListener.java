@@ -376,6 +376,18 @@ public class EasyBaseListener implements EasyListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterLlamada_metodo_sentencia(EasyParser.Llamada_metodo_sentenciaContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitLlamada_metodo_sentencia(EasyParser.Llamada_metodo_sentenciaContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterArgumentos(EasyParser.ArgumentosContext ctx) { }
 	/**
 	 * {@inheritDoc}

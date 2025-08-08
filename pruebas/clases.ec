@@ -1,26 +1,45 @@
+
+
+/# Ejemplo simple de POO - Clase Persona #/
+
 clase Persona {
     cadena nombre;
     entero edad;
     
-    metodo obtenerNombre(cadena n) {
+    metodo void colocarNombre(cadena n) {
         nombre : n;
     }
     
-    metodo obtenerEdad(entero e) {
+    metodo cadena obtnerNombre() {
+        retornar nombre;
+    }
+    
+    metodo void colocarEdad(entero e) {
         edad : e;
     }
     
-    metodo mostrarDatos() {
+    metodo void saludar() {
+        imprimir("Hola, soy ");
         imprimir(nombre);
+        imprimir(" y tengo ");
         imprimir(edad);
+        imprimir(" anios");
     }
 }
 
+/# Variable global #/
+Persona persona1;
+
 inicio {
-    Persona p1;
+    /# Configurar persona #/
+    persona1.colocarNombre("Ana");
+    persona1.colocarEdad(25);
     
-    p1.obtenerNombre("Juan");
-    p1.obtenerEdad(25);
-    p1.mostrarDatos();
+    /# Mostrar saludo #/
+    persona1.saludar();
+    
+    /# Mostrar nombre directamente #/
+    imprimir("El nombre es: ");
+    imprimir(persona1.obtnerNombre());
 }
 fin

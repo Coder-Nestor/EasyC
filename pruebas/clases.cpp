@@ -8,27 +8,37 @@ private:
     int edad;
 
 public:
-    void setNombre(string n) {
+    void colocarNombre(string n) {
         nombre = n;
     }
 
-    void setEdad(int e) {
+    string obtnerNombre() {
+        return nombre;
+    }
+
+    void colocarEdad(int e) {
         edad = e;
     }
 
-    void mostrarDatos() {
+    void saludar() {
+        cout << "Hola, soy " << endl;
         cout << nombre << endl;
+        cout << " y tengo " << endl;
         cout << edad << endl;
+        cout << " anios" << endl;
     }
 
 };
 
 
+Persona persona1;
+
 int main() {
-    Persona p1;
-    p1.setNombre("Juan");
-    p1.setEdad(25);
-    p1.mostrarDatos();
+    persona1.colocarNombre("Ana");
+    persona1.colocarEdad(25);
+    persona1.saludar();
+    cout << "El nombre es: " << endl;
+    cout << persona1.obtnerNombre() << endl;
     
     return 0;
 }

@@ -89,12 +89,14 @@ lista_valores
 
 asignacion
     : ID IGUAL expresion PUNTOYCOMA
+    | ID PUNTO ID IGUAL expresion PUNTOYCOMA
     | ID CORCHETEIZQ expresion CORCHETEDER IGUAL expresion PUNTOYCOMA
     | ID IGUAL LLAVEIZQ lista_valores LLAVEDER PUNTOYCOMA
     ;
 
 asignacion_simple
     : ID IGUAL expresion
+    | ID PUNTO ID IGUAL expresion                  
     | ID CORCHETEIZQ expresion CORCHETEDER IGUAL expresion
     | ID IGUAL LLAVEIZQ lista_valores LLAVEDER
     ;

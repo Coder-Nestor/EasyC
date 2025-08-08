@@ -307,6 +307,16 @@ public interface EasyListener extends ParseTreeListener {
 	 */
 	void exitLlamada_metodo(EasyParser.Llamada_metodoContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link EasyParser#llamada_metodo_sentencia}.
+	 * @param ctx the parse tree
+	 */
+	void enterLlamada_metodo_sentencia(EasyParser.Llamada_metodo_sentenciaContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link EasyParser#llamada_metodo_sentencia}.
+	 * @param ctx the parse tree
+	 */
+	void exitLlamada_metodo_sentencia(EasyParser.Llamada_metodo_sentenciaContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link EasyParser#argumentos}.
 	 * @param ctx the parse tree
 	 */

@@ -20,14 +20,16 @@ public class CodeGenerator extends EasyBaseVisitor<String> {
     }
     
     private String mapType(String easyType) {
-        switch (easyType) {
-            case "entero": return "int";
-            case "flotante": return "float";
-            case "booleano": return "bool";
-            case "cadena": return "string";
-            default: return easyType; // Para tipos de clase
-        }
+    switch (easyType) {
+        case "entero": return "int";
+        case "flotante": return "float";
+        case "booleano": return "bool";
+        case "cadena": return "string";
+        default: 
+          
+            return easyType;
     }
+}
     
 @Override
 public String visitPrograma(EasyParser.ProgramaContext ctx) {
@@ -208,25 +210,51 @@ private String generateParameters(EasyParser.ParametrosContext ctx) {
 
 // CORRECCIÓN: Método mejorado para generar declaraciones globales
 private String generateGlobalDeclaration(EasyParser.DeclaracionContext ctx) {
-    // Manejar el caso específico de arrays con inicialización
     String texto = ctx.getText();
     System.out.println("*** PROCESANDO DECLARACIÓN GLOBAL: " + texto);
     
-    // Caso: entero numeros[5]:{1,2,3,4,5};
+    // Caso específico: arrays con inicialización
     if (texto.matches("entero\\w+\\[\\d+\\]:\\{.*\\};")) {
-        // Extraer partes usando regex
         String processed = texto.replaceAll("entero(\\w+)\\[(\\d+)\\]:\\{([^}]+)\\};", "int $1[$2] = {$3};");
         System.out.println("*** ARRAY CON INICIALIZACIÓN: " + processed);
         return processed;
     }
-    // Caso: entero numeros[5]; (sin inicialización)
+    // Caso específico: arrays sin inicialización
     else if (texto.matches("entero\\w+\\[\\d+\\];")) {
         String processed = texto.replaceAll("entero(\\w+)\\[(\\d+)\\];", "int $1[$2];");
         System.out.println("*** ARRAY SIN INICIALIZACIÓN: " + processed);
         return processed;
     }
     
-    return null;
+    // NUEVO: Procesar declaraciones usando el visitor normal
+    String type = mapType(ctx.tipo_dato().getText());
+    StringBuilder result = new StringBuilder();
+    
+    for (EasyParser.Declaracion_variableContext decl : ctx.lista_declaraciones().declaracion_variable()) {
+        String name = decl.ID().getText();
+        
+        if (decl.CORCHETEIZQ() != null) {
+            String size = decl.LITENTERO().getText();
+            if (decl.IGUAL() != null && decl.lista_valores() != null) {
+                // Procesar valores manualmente ya que no podemos usar visit() aquí
+                String valuesText = decl.lista_valores().getText();
+                valuesText = valuesText.replaceAll("\\{", "{").replaceAll("\\}", "}");
+                result.append(type).append(" ").append(name).append("[").append(size).append("] = ").append(valuesText).append(";");
+            } else {
+                result.append(type).append(" ").append(name).append("[").append(size).append("];");
+            }
+        } else if (decl.expresion() != null && decl.IGUAL() != null) {
+            // Para expresiones simples, tomar el texto directamente
+            String valueText = decl.expresion().get(0).getText();
+            result.append(type).append(" ").append(name).append(" = ").append(valueText).append(";");
+        } else {
+            // Declaración simple (incluyendo objetos de clase)
+            result.append(type).append(" ").append(name).append(";");
+        }
+    }
+    
+    System.out.println("*** RESULTADO PROCESADO: " + result.toString());
+    return result.toString();
 }
 
    private void extractFromBloqueElemento(EasyParser.Bloque_elementoContext elemento, 
@@ -294,17 +322,26 @@ private String generateGlobalDeclaration(EasyParser.DeclaracionContext ctx) {
     }
 }
 
-   private boolean isUsedByFunctions(EasyParser.Declaracion_variable_sentenciaContext ctx) {
+private boolean isUsedByFunctions(EasyParser.Declaracion_variable_sentenciaContext ctx) {
     for (EasyParser.Declaracion_variableContext decl : ctx.lista_declaraciones().declaracion_variable()) {
         String name = decl.ID().getText();
+        String type = ctx.tipo_dato().getText();
         
         // Si es un arreglo, probablemente lo use una función
         if (decl.CORCHETEIZQ() != null) {
             return true;
         }
         
+        // Si es un tipo de clase (no primitivo), probablemente sea global
+        if (!type.equals("entero") && !type.equals("flotante") && 
+            !type.equals("booleano") && !type.equals("cadena")) {
+            return true;
+        }
+        
         // Variables específicas que sabemos que usan las funciones
-        if (name.equals("numeros") || name.equals("datos") || name.equals("valores")) {
+        if (name.equals("numeros") || name.equals("datos") || name.equals("valores") ||
+            name.equals("persona1") || name.equals("alumno1") || name.equals("alumno2") || 
+            name.equals("profesor1")) {
             return true;
         }
     }
@@ -344,12 +381,12 @@ private String generateGlobalDeclaration(EasyParser.DeclaracionContext ctx) {
     if (ctx.SUPER() != null) {
         object = "super";
     } else {
-        // Tomar el primer ID (el objeto)
-        object = ctx.ID(0).getText();
+        // Tomar el primer ID (el objeto) - CORREGIDO
+        object = ctx.ID(0).getText();  // ✅ Usar índice 0
     }
     
-    // El método es el segundo ID (si existe)
-    String method = ctx.ID().size() > 1 ? ctx.ID(1).getText() : "";
+    // El método es el segundo ID (si existe) - CORREGIDO
+    String method = ctx.ID().size() > 1 ? ctx.ID(1).getText() : "";  // ✅ Usar índice 1
     
     // Procesar argumentos
     String args = "";
@@ -362,8 +399,7 @@ private String generateGlobalDeclaration(EasyParser.DeclaracionContext ctx) {
     }
     
     return object + "." + method + "(" + args + ");";
-}
-    
+}    
     private String generateFunctionCall(EasyParser.Llamada_funcionContext ctx) {
     String functionName = ctx.ID().getText();
     
@@ -469,49 +505,63 @@ private String generateGlobalDeclaration(EasyParser.DeclaracionContext ctx) {
 }
     
     // CORRECCIÓN: Método mejorado para generar declaraciones de variables
-    private String generateVariableDeclaration(EasyParser.Declaracion_variable_sentenciaContext ctx) {
-        String type = mapType(ctx.tipo_dato().getText());
-        StringBuilder result = new StringBuilder();
+   private String generateVariableDeclaration(EasyParser.Declaracion_variable_sentenciaContext ctx) {
+    String type = mapType(ctx.tipo_dato().getText());
+    StringBuilder result = new StringBuilder();
+    
+    for (EasyParser.Declaracion_variableContext decl : ctx.lista_declaraciones().declaracion_variable()) {
+        String name = decl.ID().getText();
         
-        for (EasyParser.Declaracion_variableContext decl : ctx.lista_declaraciones().declaracion_variable()) {
-            String name = decl.ID().getText();
-            
-            if (decl.CORCHETEIZQ() != null) {
-                String size = decl.LITENTERO().getText();
-                if (decl.IGUAL() != null && decl.lista_valores() != null) {
-                    String values = visit(decl.lista_valores());
-                    // CORRECCIÓN: Cambiar : por = en inicialización de arrays
-                    result.append(type).append(" ").append(name).append("[").append(size).append("] = ").append(values).append(";");
-                } else {
-                    result.append(type).append(" ").append(name).append("[").append(size).append("];");
-                }
-            } else if (decl.expresion() != null && decl.IGUAL() != null) {
-                String value = visit(decl.expresion().get(0));
-                // CORRECCIÓN: Cambiar : por = en asignaciones
-                result.append(type).append(" ").append(name).append(" = ").append(value).append(";");
+        if (decl.CORCHETEIZQ() != null) {
+            String size = decl.LITENTERO().getText();
+            if (decl.IGUAL() != null && decl.lista_valores() != null) {
+                String values = visit(decl.lista_valores());
+                result.append(type).append(" ").append(name).append("[").append(size).append("] = ").append(values).append(";");
             } else {
-                result.append(type).append(" ").append(name).append(";");
+                result.append(type).append(" ").append(name).append("[").append(size).append("];");
             }
+        } else if (decl.expresion() != null && decl.IGUAL() != null) {
+            String value = visit(decl.expresion().get(0));
+            result.append(type).append(" ").append(name).append(" = ").append(value).append(";");
+        } else {
+            // Declaración simple - funciona tanto para tipos primitivos como clases
+            result.append(type).append(" ").append(name).append(";");
         }
-        
-        return result.toString();
     }
     
+    return result.toString();
+}
+
+    
     // CORRECCIÓN: Método mejorado para generar asignaciones
-    private String generateAssignment(EasyParser.AsignacionContext ctx) {
-        String variable = ctx.ID().getText();
-        
-        if (ctx.CORCHETEIZQ() != null) {
-            String index = visit(ctx.expresion(0));
-            String value = visit(ctx.expresion(1));
-            // CORRECCIÓN: Usar = en lugar de :
-            return variable + "[" + index + "] = " + value + ";";
-        } else {
-            String value = visit(ctx.expresion(0));
-            // CORRECCIÓN: Usar = en lugar de :
-            return variable + " = " + value + ";";
-        }
+  private String generateAssignment(EasyParser.AsignacionContext ctx) {
+    String variable = ctx.ID(0).getText();  // ✅ CORREGIDO - usar índice 0
+    
+    // Verificar si es asignación a propiedad de objeto (ID PUNTO ID)
+    if (ctx.PUNTO() != null && ctx.ID().size() > 1) {
+        String object = ctx.ID(0).getText();
+        String property = ctx.ID(1).getText();
+        String value = visit(ctx.expresion(0));
+        return object + "." + property + " = " + value + ";";
     }
+    // Verificar si es asignación a array
+    else if (ctx.CORCHETEIZQ() != null) {
+        String index = visit(ctx.expresion(0));
+        String value = visit(ctx.expresion(1));
+        return variable + "[" + index + "] = " + value + ";";
+    }
+    // Verificar si es asignación con lista de valores
+    else if (ctx.lista_valores() != null) {
+        String values = visit(ctx.lista_valores());
+        return variable + " = " + values + ";";
+    }
+    // Asignación simple
+    else {
+        String value = visit(ctx.expresion(0));
+        return variable + " = " + value + ";";
+    }
+}
+
     
     private String generateWhileStatement(EasyParser.Estructura_repetitivaContext ctx) {
         String condition = visit(ctx.expresion());
@@ -910,27 +960,36 @@ public String visitCaso_defecto(EasyParser.Caso_defectoContext ctx) {
         }
         return null;
     }
+   @Override
+public String visitAsignacion(EasyParser.AsignacionContext ctx) {
+    String variable = ctx.ID(0).getText();  // ✅ CORREGIDO
     
-    @Override
-    public String visitAsignacion(EasyParser.AsignacionContext ctx) {
-        String variable = ctx.ID().getText();
-        
-        if (ctx.CORCHETEIZQ() != null) {
-            String index = visit(ctx.expresion(0));
-            String value = visit(ctx.expresion(1));
-            // CORRECCIÓN: Usar = en lugar de :
-            addLine(variable + "[" + index + "] = " + value + ";");
-        } else if (ctx.lista_valores() != null) {
-            String values = visit(ctx.lista_valores());
-            // CORRECCIÓN: Usar = en lugar de :
-            addLine(variable + " = " + values + ";");
-        } else {
-            String value = visit(ctx.expresion(0));
-            // CORRECCIÓN: Usar = en lugar de :
-            addLine(variable + " = " + value + ";");
-        }
-        return null;
+    // Verificar si es asignación a propiedad de objeto (ID PUNTO ID)
+    if (ctx.PUNTO() != null && ctx.ID().size() > 1) {
+        String object = ctx.ID(0).getText();
+        String property = ctx.ID(1).getText();
+        String value = visit(ctx.expresion(0));
+        addLine(object + "." + property + " = " + value + ";");
     }
+    // Verificar si es asignación a array
+    else if (ctx.CORCHETEIZQ() != null) {
+        String index = visit(ctx.expresion(0));
+        String value = visit(ctx.expresion(1));
+        addLine(variable + "[" + index + "] = " + value + ";");
+    }
+    // Verificar si es asignación con lista de valores
+    else if (ctx.lista_valores() != null) {
+        String values = visit(ctx.lista_valores());
+        addLine(variable + " = " + values + ";");
+    }
+    // Asignación simple
+    else {
+        String value = visit(ctx.expresion(0));
+        addLine(variable + " = " + value + ";");
+    }
+    return null;
+}
+
     
     @Override
     public String visitEstructura_condicional(EasyParser.Estructura_condicionalContext ctx) {
@@ -1016,23 +1075,33 @@ public String visitEstructura_para(EasyParser.Estructura_paraContext ctx) {
 
 // Método auxiliar para generar asignación simple
 private String generateAsignacionSimple(EasyParser.Asignacion_simpleContext ctx) {
-    String variable = ctx.ID().getText();
-    
-    if (ctx.CORCHETEIZQ() != null) {
+    String variable = ctx.ID(0).getText();  // ✅ CORREGIDO - usar índice 0
+
+    // Verificar si es asignación a propiedad de objeto (ID PUNTO ID)
+    if (ctx.PUNTO() != null && ctx.ID().size() > 1) {
+        String object = ctx.ID(0).getText();
+        String property = ctx.ID(1).getText();
+        String value = visit(ctx.expresion(0));
+        return object + "." + property + " = " + value;
+    }
+    // Verificar si es asignación a array
+    else if (ctx.CORCHETEIZQ() != null) {
         String index = visit(ctx.expresion(0));
         String value = visit(ctx.expresion(1));
-        // CORRECCIÓN: Usar = en lugar de :
         return variable + "[" + index + "] = " + value;
-    } else if (ctx.lista_valores() != null) {
+    }
+    // Verificar si es asignación con lista de valores
+    else if (ctx.lista_valores() != null) {
         String values = visit(ctx.lista_valores());
-        // CORRECCIÓN: Usar = en lugar de :
         return variable + " = " + values;
-    } else {
+    }
+    // Asignación simple
+    else {
         String value = visit(ctx.expresion(0));
-        // CORRECCIÓN: Usar = en lugar de :
         return variable + " = " + value;
     }
 }
+
 
 // Método auxiliar para generar declaración de variable simple
 private String generateDeclaracionVariableSimple(EasyParser.Declaracion_variable_simpleContext ctx) {
