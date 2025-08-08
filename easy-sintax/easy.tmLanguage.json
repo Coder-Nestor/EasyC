@@ -1,0 +1,38 @@
+{
+    "scopeName": "source.easy",
+    "patterns": [
+        {
+            "name": "keyword.control.easy",
+            "match": "\\b(clase|constructor|metodo|publico|privado|protegido|si|sino|mientras|para|retornar|inicio|fin|verdadero|falso)\\b"
+        },
+        {
+            "name": "storage.type.easy",
+            "match": "\\b(entero|flotante|cadena|booleano|nulo)\\b"
+        },
+        {
+            "name": "comment.block.easy",
+            "begin": "/#",
+            "end": "#/"
+        },
+        {
+            "name": "comment.line.double-slash.easy",
+            "match": "//.*$"
+        },
+        {
+            "name": "string.quoted.double.easy",
+            "begin": "\"",
+            "end": "\"",
+            "patterns": [
+                { "name": "constant.character.escape.easy", "match": "\\\\." }
+            ]
+        },
+        {
+            "name": "constant.numeric.easy",
+            "match": "\\b[0-9]+(\\.[0-9]+)?\\b"
+        },
+        {
+            "name": "variable.other.easy",
+            "match": "\\b[a-zA-Z_][a-zA-Z0-9_]*\\b"
+        }
+    ]
+}

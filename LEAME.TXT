@@ -1,0 +1,32 @@
+# Easy Language
+
+Easy es un lenguaje de programación personalizado con su propio traductor que
+genera código C++ a partir de archivos `.ec`.
+
+---
+
+## Requisitos
+
+- Java 8 o superior (para ejecutar el traductor basado en ANTLR)
+- GNU Compiler Collection (g++) para compilar el código C++
+- Bash (Linux/macOS) o CMD/PowerShell (Windows)
+
+---
+
+## Uso
+
+
+## Para Linux /macOS
+1. Ejecuta el script `run_easy.sh`, pasando como parámetro el archivo fuente `.ec`:
+
+```bash
+./run_easy.sh archivo.ec
+
+---
+
+## Para Windows
+Ejecuta el script `run_easy.sh`, pasando como parámetro el archivo fuente `.ec`:
+
+
+Para un mejor uso y entendimiento de este lenguaje
+FAVOR LEER la documentación.
